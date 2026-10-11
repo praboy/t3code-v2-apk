@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       APP_VARIANT: preview
+      T3CODE_MOBILE_UPDATES_ENABLED: "0"
       EXPO_NO_DOTENV: "1"
       NODE_OPTIONS: --max-old-space-size=8192
 
@@ -31,16 +32,18 @@ jobs:
             args:
               - --filter=@t3tools/mobile...
 
+      - uses: gradle/actions/setup-gradle@v4
+
       - name: Generate Android project
         run: pnpm --filter @t3tools/mobile exec expo prebuild --clean --platform android
 
       - name: Build installable APK
         run: |
           cd apps/mobile/android
-          ./gradlew --no-daemon assembleDebug
+          ./gradlew --no-daemon --stacktrace --console=plain assembleRelease
           cd "$GITHUB_WORKSPACE"
           mkdir -p dist
-          cp apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk dist/T3-Code-V2-Preview.apk
+          cp apps/mobile/android/app/build/outputs/apk/release/app-release.apk dist/T3-Code-V2-Preview.apk
           sha256sum dist/T3-Code-V2-Preview.apk > dist/T3-Code-V2-Preview.apk.sha256
 
       - uses: actions/upload-artifact@v4
@@ -62,5 +65,5 @@ jobs:
               --repo "$GITHUB_REPOSITORY" \
               --title "T3 Code Android V2 Preview" \
               --prerelease \
-              --notes "Install alongside the Play Store build. This preview APK uses the current Android client and orchestration protocol V2."
+              --notes "Install alongside the Play Store build. This standalone preview APK embeds its JavaScript bundle and uses orchestration protocol V2."
           fi
